@@ -100,6 +100,14 @@ Please make sure the following are installed:
 - `npm`  
   `npm`
 
+Check your local versions with:  
+可以先用以下命令检查本机版本：
+
+```bash
+node -v
+npm -v
+```
+
 Project runtime dependencies:  
 项目运行依赖：
 
@@ -115,11 +123,35 @@ On Windows, `tracert` output may be incomplete depending on system policy or net
 
 ### Install Dependencies / 安装依赖
 
-Install Node dependencies from the project root:  
-在项目根目录安装 Node 依赖：
+Install all Node dependencies from the project root:  
+在项目根目录一次性安装全部 Node 依赖：
 
 ```bash
 npm install
+```
+
+If you want to install dependencies one by one, use:  
+如果你希望逐个安装依赖，可以使用以下命令：
+
+Install `express`:  
+安装 `express`：
+
+```bash
+npm install express
+```
+
+Install `cors`:  
+安装 `cors`：
+
+```bash
+npm install cors
+```
+
+Install `playwright`:  
+安装 `playwright`：
+
+```bash
+npm install playwright
 ```
 
 Install the Playwright Chromium runtime:  
@@ -131,8 +163,15 @@ npx playwright install chromium
 
 ### Start the Service / 启动服务
 
-Start the local service with:  
-使用以下命令启动本地服务：
+The direct startup command is:  
+直接启动命令是：
+
+```bash
+node server.js
+```
+
+`npm start` is also available because `package.json` maps it to `node server.js`:  
+也可以使用 `npm start`，因为 `package.json` 中已经把它映射到了 `node server.js`：
 
 ```bash
 npm start
@@ -198,7 +237,7 @@ The server runs on port `2333` by default.
 服务端默认运行在 `2333` 端口。
 
 If needed, update the `PORT` constant in [server.js](/Users/huhu/Documents/Develop/login-monitor/server.js).  
-如果需要修改端口，可以调整 [server.js](/Users/huhu/Documents/Develop/login-monitor/server.js) 中的 `PORT` 常量。
+如果需要修改端口，可以调整 [server.js](/Users/huhu/Documents/Develop/login-monitor/Login%20Monitor/server.js) 中的 `PORT` 常量。
 
 ## Development / 开发说明
 
