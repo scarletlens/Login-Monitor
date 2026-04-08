@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>登录监测大屏 / Login Monitor Dashboard</title>
+  <title>Login Monitor Dashboard</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -78,6 +78,44 @@
       text-align: center;
       margin-bottom: 12px;
       letter-spacing: 1px;
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .control-header .control-title {
+      margin-bottom: 0;
+      text-align: left;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .lang-btn {
+      min-width: 84px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.84);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .lang-btn.active {
+      background: rgba(59,130,246,0.22);
+      border-color: rgba(59,130,246,0.45);
+      color: #fff;
     }
 
     .control-grid {
@@ -414,25 +452,25 @@
     <div class="bg-mask"></div>
 
     <div class="record-panel">
-      <div class="panel-title">掉线记录 / Logout Records</div>
+      <div id="recordsTitle" class="panel-title">掉线记录</div>
 
       <div class="record-toolbar">
-        <button id="clearRecordsBtn" class="toolbar-btn">清空记录 / Clear</button>
+        <button id="clearRecordsBtn" class="toolbar-btn">清空记录</button>
       </div>
 
       <div class="record-table-wrap">
         <table class="record-table">
           <thead>
             <tr>
-              <th>掉线时间 / Time</th>
-              <th>状态 / Status</th>
-              <th>页面地址 / URL</th>
-              <th>掉线记录 / Detail</th>
+              <th id="thTime">掉线时间</th>
+              <th id="thStatus">状态</th>
+              <th id="thUrl">页面地址</th>
+              <th id="thDetail">掉线记录</th>
             </tr>
           </thead>
           <tbody id="recordTableBody">
             <tr class="empty-row" id="emptyRow">
-              <td colspan="4">暂无掉线记录 / No records yet</td>
+              <td colspan="4">暂无掉线记录</td>
             </tr>
           </tbody>
         </table>
@@ -440,90 +478,96 @@
     </div>
 
     <div class="control-panel">
-      <div class="control-title">业务系统登录态监测 / Business Login Monitor</div>
+      <div class="control-header">
+        <div id="controlTitle" class="control-title">业务系统登录态监测</div>
+        <div class="lang-switch">
+          <button id="langZhBtn" class="lang-btn active">中文</button>
+          <button id="langEnBtn" class="lang-btn">English</button>
+        </div>
+      </div>
 
       <div class="control-grid">
         <div class="block block-span-2">
-          <div class="block-title">目标页面 / Target Page</div>
-          <label class="field-label" for="targetUrlInput">监测地址 / Target URL</label>
+          <div id="targetBlockTitle" class="block-title">目标页面</div>
+          <label id="targetUrlLabel" class="field-label" for="targetUrlInput">监测地址</label>
           <input
             id="targetUrlInput"
             class="input"
             type="url"
-            placeholder="请输入完整地址 / Enter full URL, e.g. https://example.com/workbench"
+            placeholder="请输入完整地址，例如：https://example.com/workbench"
           />
           <div class="action-row">
-            <button id="saveConfigBtn" class="panel-btn btn-secondary">保存地址 / Save URL</button>
-            <button id="reloadConfigBtn" class="panel-btn">重新读取 / Reload</button>
+            <button id="saveConfigBtn" class="panel-btn btn-secondary">保存地址</button>
+            <button id="reloadConfigBtn" class="panel-btn">重新读取</button>
           </div>
-          <div id="currentTargetText" class="current-target">当前目标地址 / Current target: 读取中 / Loading...</div>
+          <div id="currentTargetText" class="current-target">当前目标地址：读取中...</div>
         </div>
 
         <div class="block login-block">
-          <div class="block-title">登录态监测 / Login Monitoring</div>
-          <p class="helper-text">先保存目标地址，再点击“打开浏览器登录”完成一次人工登录。之后可以直接启动自动监测。 / Save the target URL first, then click "Open Browser Login" to complete a manual login once. After that, you can start automated monitoring.</p>
+          <div id="loginBlockTitle" class="block-title">登录态监测</div>
+          <p id="loginHelperText" class="helper-text">先保存目标地址，再点击“打开浏览器登录”完成一次人工登录。之后可以直接启动自动监测。</p>
 
-          <button id="openBrowserBtn" class="panel-btn btn-primary">打开浏览器登录 / Open Browser Login</button>
+          <button id="openBrowserBtn" class="panel-btn btn-primary">打开浏览器登录</button>
 
-          <label class="field-label" for="keywordInput">附加掉线关键词 / Extra Logout Keywords</label>
+          <label id="keywordLabel" class="field-label" for="keywordInput">附加掉线关键词</label>
           <input
             id="keywordInput"
             class="keyword-input"
             type="text"
-            placeholder="可选 / Optional: 会话失效,重新登录,用户未登录"
+            placeholder="可选：会话失效,重新登录,用户未登录"
           />
 
-          <button id="monitorBtn" class="panel-btn btn-stopped">启动监测 / Start Monitor</button>
+          <button id="monitorBtn" class="panel-btn btn-stopped">启动监测</button>
 
-          <div id="alarmStatus" class="alarm-status warn">状态 / Status: 未启动 / Not started</div>
+          <div id="alarmStatus" class="alarm-status warn">状态：未启动</div>
         </div>
 
         <div class="block">
-          <div class="block-title">网络诊断 / Network Diagnostics</div>
-          <p class="helper-text">包含 DNS、Ping、HTTP、TCP 探测、HTTP 耗时、HTTPS 证书、重定向链、连续采样和 Traceroute。 / Includes DNS, Ping, HTTP, TCP probe, timing, HTTPS certificate, redirect chain, repeated samples, and Traceroute.</p>
+          <div id="networkBlockTitle" class="block-title">网络诊断</div>
+          <p id="networkHelperText" class="helper-text">包含 DNS、Ping、HTTP、TCP 探测、HTTP 耗时、HTTPS 证书、重定向链、连续采样和 Traceroute。</p>
 
           <div class="network-actions">
-            <button id="runNetworkBtn" class="panel-btn btn-primary">执行网络检测 / Run Diagnostics</button>
+            <button id="runNetworkBtn" class="panel-btn btn-primary">执行网络检测</button>
           </div>
 
-          <div id="networkStatus" class="network-status warn network-summary">状态 / Status: 等待执行 / Waiting</div>
+          <div id="networkStatus" class="network-status warn network-summary">状态：等待执行</div>
 
           <div class="network-grid">
             <div class="network-card">
-              <div class="network-card-title">DNS 解析 / DNS Resolution</div>
-              <div id="dnsResult" class="network-result">尚未执行 / Not started</div>
+              <div id="dnsTitle" class="network-card-title">DNS 解析</div>
+              <div id="dnsResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">Ping 连通性 / Ping Reachability</div>
-              <div id="pingResult" class="network-result">尚未执行 / Not started</div>
+              <div id="pingTitle" class="network-card-title">Ping 连通性</div>
+              <div id="pingResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">HTTP 响应概览 / HTTP Overview</div>
-              <div id="curlResult" class="network-result">尚未执行 / Not started</div>
+              <div id="httpOverviewTitle" class="network-card-title">HTTP 响应概览</div>
+              <div id="curlResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">TCP 端口探测 / TCP Port Probe</div>
-              <div id="tcpResult" class="network-result">尚未执行 / Not started</div>
+              <div id="tcpTitle" class="network-card-title">TCP 端口探测</div>
+              <div id="tcpResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">HTTP 耗时分析 / HTTP Timing</div>
-              <div id="timingResult" class="network-result">尚未执行 / Not started</div>
+              <div id="timingTitle" class="network-card-title">HTTP 耗时分析</div>
+              <div id="timingResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">HTTPS 证书检测 / HTTPS Certificate</div>
-              <div id="certificateResult" class="network-result">尚未执行 / Not started</div>
+              <div id="certificateTitle" class="network-card-title">HTTPS 证书检测</div>
+              <div id="certificateResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card">
-              <div class="network-card-title">重定向链分析 / Redirect Chain</div>
-              <div id="redirectResult" class="network-result">尚未执行 / Not started</div>
+              <div id="redirectTitle" class="network-card-title">重定向链分析</div>
+              <div id="redirectResult" class="network-result">尚未执行</div>
             </div>
             <div class="network-card span-2">
-              <div class="network-card-title">多次请求采样 / Repeated Samples</div>
-              <div id="sampleResult" class="network-result tall">尚未执行 / Not started</div>
+              <div id="sampleTitle" class="network-card-title">多次请求采样</div>
+              <div id="sampleResult" class="network-result tall">尚未执行</div>
             </div>
             <div class="network-card span-2">
-              <div class="network-card-title">Traceroute 链路分析 / Traceroute Path</div>
-              <div id="tracerouteResult" class="network-result tall">尚未执行 / Not started</div>
+              <div id="tracerouteTitle" class="network-card-title">Traceroute 链路分析</div>
+              <div id="tracerouteResult" class="network-result tall">尚未执行</div>
             </div>
           </div>
         </div>
@@ -533,19 +577,199 @@
 
   <script>
     const API_BASE = "http://127.0.0.1:2333";
+    const I18N = {
+      zh: {
+        pageTitle: "登录监测大屏",
+        recordsTitle: "掉线记录",
+        clear: "清空记录",
+        thTime: "掉线时间",
+        thStatus: "状态",
+        thUrl: "页面地址",
+        thDetail: "掉线记录",
+        noRecords: "暂无掉线记录",
+        controlTitle: "业务系统登录态监测",
+        targetBlockTitle: "目标页面",
+        targetUrlLabel: "监测地址",
+        targetUrlPlaceholder: "请输入完整地址，例如：https://example.com/workbench",
+        saveUrl: "保存地址",
+        reload: "重新读取",
+        currentTargetLoading: "当前目标地址：读取中...",
+        currentTarget: "当前目标地址：{url}",
+        currentTargetEmpty: "当前目标地址：未配置",
+        loginBlockTitle: "登录态监测",
+        loginHelperText: "先保存目标地址，再点击“打开浏览器登录”完成一次人工登录。之后可以直接启动自动监测。",
+        openBrowser: "打开浏览器登录",
+        keywordLabel: "附加掉线关键词",
+        keywordPlaceholder: "可选：会话失效,重新登录,用户未登录",
+        startMonitor: "启动监测",
+        stopMonitor: "停止监测",
+        statusNotStarted: "状态：未启动",
+        networkBlockTitle: "网络诊断",
+        networkHelperText: "包含 DNS、Ping、HTTP、TCP 探测、HTTP 耗时、HTTPS 证书、重定向链、连续采样和 Traceroute。",
+        runDiagnostics: "执行网络检测",
+        networkWaiting: "状态：等待执行",
+        dnsTitle: "DNS 解析",
+        pingTitle: "Ping 连通性",
+        httpOverviewTitle: "HTTP 响应概览",
+        tcpTitle: "TCP 端口探测",
+        timingTitle: "HTTP 耗时分析",
+        certificateTitle: "HTTPS 证书检测",
+        redirectTitle: "重定向链分析",
+        sampleTitle: "多次请求采样",
+        tracerouteTitle: "Traceroute 链路分析",
+        notStarted: "尚未执行",
+        noResult: "无结果",
+        noOutput: "无输出",
+        fillAndSaveTarget: "请先填写并保存目标地址",
+        alertSoundFailed: "报警音播放失败",
+        urlHits: "命中URL特征",
+        textHits: "命中文字",
+        passwordInputs: "检测到密码框",
+        loginButtons: "检测到登录按钮",
+        suspectedLogout: "检测到疑似掉登录",
+        logout: "掉线",
+        recovered: "恢复",
+        recoveredDetail: "页面访问正常，登录状态恢复",
+        failedLoadSettings: "读取配置失败",
+        targetUrlEmpty: "目标地址不能为空",
+        failedSaveSettings: "保存配置失败",
+        openingBrowser: "状态：正在打开浏览器\n目标地址：{url}",
+        browserOpened: "状态：浏览器已打开\n目标地址：{url}\n请在弹出的浏览器中手动完成登录，然后回到本页面启动监测。",
+        failedOpenBrowser: "状态：打开浏览器失败\n{message}",
+        checkFailed: "检测失败",
+        suspectedLogoutStatus: "状态：疑似掉登录\n目标地址：{targetUrl}\n检测时间：{checkedAt}\n当前地址：{currentUrl}\n命中URL特征：{urlHits}\n命中文字：{textHits}\n密码框：{passwordInputs}\n登录按钮：{loginButtons}",
+        none: "无",
+        logoutAlert: "检测到目标页面疑似掉登录，请立即处理。",
+        loginOkStatus: "状态：登录正常\n目标地址：{targetUrl}\n检测时间：{checkedAt}\n当前地址：{currentUrl}",
+        checkFailedStatus: "状态：检测失败\n{message}",
+        runningDiagnostics: "状态：正在执行网络检测\n目标地址：{url}",
+        networkFailed: "网络检测失败",
+        diagnosticsCompleted: "状态：网络检测完成\n检测时间：{checkedAt}\n目标主机：{host}:{port}\n检测项：9",
+        diagnosticsFailed: "状态：网络检测失败\n{message}",
+        monitorStarted: "状态：监测已启动",
+        monitorStopped: "状态：监测已停止",
+        targetSaved: "状态：目标地址已保存\n{url}",
+        targetSaveFailed: "状态：保存目标地址失败\n{message}",
+        targetReloaded: "状态：已重新读取目标地址\n{url}",
+        targetReloadFailed: "状态：读取目标地址失败\n{message}",
+        initFailed: "状态：初始化配置失败\n{message}"
+      },
+      en: {
+        pageTitle: "Login Monitor Dashboard",
+        recordsTitle: "Logout Records",
+        clear: "Clear",
+        thTime: "Time",
+        thStatus: "Status",
+        thUrl: "URL",
+        thDetail: "Detail",
+        noRecords: "No records yet",
+        controlTitle: "Business Login Monitor",
+        targetBlockTitle: "Target Page",
+        targetUrlLabel: "Target URL",
+        targetUrlPlaceholder: "Enter full URL, e.g. https://example.com/workbench",
+        saveUrl: "Save URL",
+        reload: "Reload",
+        currentTargetLoading: "Current target: Loading...",
+        currentTarget: "Current target: {url}",
+        currentTargetEmpty: "Current target: Not configured",
+        loginBlockTitle: "Login Monitoring",
+        loginHelperText: "Save the target URL first, then click \"Open Browser Login\" to complete a manual login once. After that, you can start automated monitoring.",
+        openBrowser: "Open Browser Login",
+        keywordLabel: "Extra Logout Keywords",
+        keywordPlaceholder: "Optional: session expired, login again, user not logged in",
+        startMonitor: "Start Monitor",
+        stopMonitor: "Stop Monitor",
+        statusNotStarted: "Status: Not started",
+        networkBlockTitle: "Network Diagnostics",
+        networkHelperText: "Includes DNS, Ping, HTTP, TCP probe, HTTP timing, HTTPS certificate, redirect chain, repeated samples, and Traceroute.",
+        runDiagnostics: "Run Diagnostics",
+        networkWaiting: "Status: Waiting",
+        dnsTitle: "DNS Resolution",
+        pingTitle: "Ping Reachability",
+        httpOverviewTitle: "HTTP Overview",
+        tcpTitle: "TCP Port Probe",
+        timingTitle: "HTTP Timing",
+        certificateTitle: "HTTPS Certificate",
+        redirectTitle: "Redirect Chain",
+        sampleTitle: "Repeated Samples",
+        tracerouteTitle: "Traceroute Path",
+        notStarted: "Not started",
+        noResult: "No result",
+        noOutput: "No output",
+        fillAndSaveTarget: "Please enter and save the target URL first",
+        alertSoundFailed: "Failed to play alert sound",
+        urlHits: "URL hits",
+        textHits: "Text hits",
+        passwordInputs: "Password inputs",
+        loginButtons: "Login buttons",
+        suspectedLogout: "Suspected logout detected",
+        logout: "Logout",
+        recovered: "Recovered",
+        recoveredDetail: "Page access restored and login state recovered",
+        failedLoadSettings: "Failed to load settings",
+        targetUrlEmpty: "Target URL cannot be empty",
+        failedSaveSettings: "Failed to save settings",
+        openingBrowser: "Status: Opening browser\nTarget URL: {url}",
+        browserOpened: "Status: Browser opened\nTarget URL: {url}\nPlease complete login in the opened browser, then come back and start monitoring.",
+        failedOpenBrowser: "Status: Failed to open browser\n{message}",
+        checkFailed: "Check failed",
+        suspectedLogoutStatus: "Status: Suspected logout\nTarget URL: {targetUrl}\nChecked at: {checkedAt}\nCurrent URL: {currentUrl}\nURL hits: {urlHits}\nText hits: {textHits}\nPassword inputs: {passwordInputs}\nLogin buttons: {loginButtons}",
+        none: "None",
+        logoutAlert: "Suspected logout detected on the target page. Please handle it immediately.",
+        loginOkStatus: "Status: Login OK\nTarget URL: {targetUrl}\nChecked at: {checkedAt}\nCurrent URL: {currentUrl}",
+        checkFailedStatus: "Status: Check failed\n{message}",
+        runningDiagnostics: "Status: Running diagnostics\nTarget URL: {url}",
+        networkFailed: "Network diagnostics failed",
+        diagnosticsCompleted: "Status: Diagnostics completed\nChecked at: {checkedAt}\nTarget host: {host}:{port}\nChecks: 9",
+        diagnosticsFailed: "Status: Diagnostics failed\n{message}",
+        monitorStarted: "Status: Monitoring started",
+        monitorStopped: "Status: Monitoring stopped",
+        targetSaved: "Status: Target URL saved\n{url}",
+        targetSaveFailed: "Status: Failed to save target URL\n{message}",
+        targetReloaded: "Status: Target URL reloaded\n{url}",
+        targetReloadFailed: "Status: Failed to reload target URL\n{message}",
+        initFailed: "Status: Failed to initialize settings\n{message}"
+      }
+    };
 
     const targetUrlInput = document.getElementById("targetUrlInput");
+    const recordsTitle = document.getElementById("recordsTitle");
+    const thTime = document.getElementById("thTime");
+    const thStatus = document.getElementById("thStatus");
+    const thUrl = document.getElementById("thUrl");
+    const thDetail = document.getElementById("thDetail");
+    const controlTitle = document.getElementById("controlTitle");
+    const langZhBtn = document.getElementById("langZhBtn");
+    const langEnBtn = document.getElementById("langEnBtn");
+    const targetBlockTitle = document.getElementById("targetBlockTitle");
+    const targetUrlLabel = document.getElementById("targetUrlLabel");
     const saveConfigBtn = document.getElementById("saveConfigBtn");
     const reloadConfigBtn = document.getElementById("reloadConfigBtn");
     const currentTargetText = document.getElementById("currentTargetText");
+    const loginBlockTitle = document.getElementById("loginBlockTitle");
+    const loginHelperText = document.getElementById("loginHelperText");
     const openBrowserBtn = document.getElementById("openBrowserBtn");
     const monitorBtn = document.getElementById("monitorBtn");
     const alarmStatus = document.getElementById("alarmStatus");
+    const keywordLabel = document.getElementById("keywordLabel");
     const keywordInput = document.getElementById("keywordInput");
     const recordTableBody = document.getElementById("recordTableBody");
     const clearRecordsBtn = document.getElementById("clearRecordsBtn");
+    const networkBlockTitle = document.getElementById("networkBlockTitle");
+    const networkHelperText = document.getElementById("networkHelperText");
     const runNetworkBtn = document.getElementById("runNetworkBtn");
     const networkStatus = document.getElementById("networkStatus");
+    const titleMap = {
+      dnsTitle: document.getElementById("dnsTitle"),
+      pingTitle: document.getElementById("pingTitle"),
+      httpOverviewTitle: document.getElementById("httpOverviewTitle"),
+      tcpTitle: document.getElementById("tcpTitle"),
+      timingTitle: document.getElementById("timingTitle"),
+      certificateTitle: document.getElementById("certificateTitle"),
+      redirectTitle: document.getElementById("redirectTitle"),
+      sampleTitle: document.getElementById("sampleTitle"),
+      tracerouteTitle: document.getElementById("tracerouteTitle")
+    };
 
     const networkResultMap = {
       dns: document.getElementById("dnsResult"),
@@ -565,19 +789,77 @@
     let lastRecordKey = "";
     let wasLoggedOut = false;
     let currentTargetUrl = "";
+    let currentLang = localStorage.getItem("login-monitor-lang") === "en" ? "en" : "zh";
+
+    function t(key, vars = {}) {
+      let template = I18N[currentLang][key] || key;
+      for (const [name, value] of Object.entries(vars)) {
+        template = template.replaceAll(`{${name}}`, String(value));
+      }
+      return template;
+    }
+
+    function applyLanguage() {
+      document.title = t("pageTitle");
+      recordsTitle.textContent = t("recordsTitle");
+      clearRecordsBtn.textContent = t("clear");
+      thTime.textContent = t("thTime");
+      thStatus.textContent = t("thStatus");
+      thUrl.textContent = t("thUrl");
+      thDetail.textContent = t("thDetail");
+      controlTitle.textContent = t("controlTitle");
+      targetBlockTitle.textContent = t("targetBlockTitle");
+      targetUrlLabel.textContent = t("targetUrlLabel");
+      targetUrlInput.placeholder = t("targetUrlPlaceholder");
+      saveConfigBtn.textContent = t("saveUrl");
+      reloadConfigBtn.textContent = t("reload");
+      loginBlockTitle.textContent = t("loginBlockTitle");
+      loginHelperText.textContent = t("loginHelperText");
+      openBrowserBtn.textContent = t("openBrowser");
+      keywordLabel.textContent = t("keywordLabel");
+      keywordInput.placeholder = t("keywordPlaceholder");
+      monitorBtn.textContent = monitorRunning ? t("stopMonitor") : t("startMonitor");
+      networkBlockTitle.textContent = t("networkBlockTitle");
+      networkHelperText.textContent = t("networkHelperText");
+      runNetworkBtn.textContent = t("runDiagnostics");
+      for (const [key, element] of Object.entries(titleMap)) {
+        element.textContent = t(key);
+      }
+      langZhBtn.classList.toggle("active", currentLang === "zh");
+      langEnBtn.classList.toggle("active", currentLang === "en");
+      updateCurrentTargetText();
+
+      if (document.getElementById("emptyRow")) {
+        document.getElementById("emptyRow").innerHTML = `<td colspan="4">${t("noRecords")}</td>`;
+      }
+      if (!alarmStatus.dataset.dynamic) {
+        alarmStatus.textContent = t("statusNotStarted");
+      }
+      if (!networkStatus.dataset.dynamic) {
+        networkStatus.textContent = t("networkWaiting");
+      }
+      for (const element of Object.values(networkResultMap)) {
+        if (!element.dataset.dynamic) {
+          element.textContent = t("notStarted");
+        }
+      }
+      localStorage.setItem("login-monitor-lang", currentLang);
+    }
 
     function updateCurrentTargetText() {
       currentTargetText.textContent = currentTargetUrl
-        ? `当前目标地址 / Current target: ${currentTargetUrl}`
-        : "当前目标地址 / Current target: 未配置 / Not configured";
+        ? t("currentTarget", { url: currentTargetUrl })
+        : t("currentTargetEmpty");
     }
 
     function updateStatus(message, type = "warn") {
+      alarmStatus.dataset.dynamic = "true";
       alarmStatus.textContent = message;
       alarmStatus.className = `alarm-status ${type}`;
     }
 
     function updateNetworkStatus(message, type = "warn") {
+      networkStatus.dataset.dynamic = "true";
       networkStatus.textContent = message;
       networkStatus.className = `network-status ${type}`;
     }
@@ -590,7 +872,7 @@
       const targetUrl = getTargetUrlFromInput() || currentTargetUrl;
 
       if (!targetUrl) {
-        throw new Error("请先填写并保存目标地址 / Please enter and save the target URL first");
+        throw new Error(t("fillAndSaveTarget"));
       }
 
       return targetUrl;
@@ -627,7 +909,7 @@
           oscillator.stop(now + i * 0.35 + 0.25);
         }
       } catch (err) {
-        console.error("报警音播放失败 / Failed to play alert sound:", err);
+        console.error(`${t("alertSoundFailed")}:`, err);
       }
     }
 
@@ -656,33 +938,33 @@
       const detailParts = [];
 
       if (data.hitLoginUrlKeywords?.length) {
-        detailParts.push(`命中URL特征 / URL hits: ${data.hitLoginUrlKeywords.join("、")}`);
+        detailParts.push(`${t("urlHits")}: ${data.hitLoginUrlKeywords.join("、")}`);
       }
       if (data.hitTextKeywords?.length) {
-        detailParts.push(`命中文字 / Text hits: ${data.hitTextKeywords.join("、")}`);
+        detailParts.push(`${t("textHits")}: ${data.hitTextKeywords.join("、")}`);
       }
       if (data.hasPasswordInput > 0) {
-        detailParts.push(`检测到密码框 / Password inputs: ${data.hasPasswordInput}`);
+        detailParts.push(`${t("passwordInputs")}: ${data.hasPasswordInput}`);
       }
       if (data.hasLoginButton > 0) {
-        detailParts.push(`检测到登录按钮 / Login buttons: ${data.hasLoginButton}`);
+        detailParts.push(`${t("loginButtons")}: ${data.hasLoginButton}`);
       }
 
-      const detail = detailParts.join("；") || "检测到疑似掉登录 / Suspected logout detected";
+      const detail = detailParts.join("；") || t("suspectedLogout");
       const recordKey = `${data.currentUrl}|${detail}`;
 
       if (recordKey === lastRecordKey) return;
       lastRecordKey = recordKey;
 
-      addRecordRow(data.checkedAt, "掉线 / Logout", data.currentUrl, detail, "alert");
+      addRecordRow(data.checkedAt, t("logout"), data.currentUrl, detail, "alert");
     }
 
     function addRecoverRecord(data) {
       addRecordRow(
         data.checkedAt,
-        "恢复 / Recovered",
+        t("recovered"),
         data.currentUrl,
-        "页面访问正常，登录状态恢复 / Page access restored and login state recovered",
+        t("recoveredDetail"),
         "recover"
       );
       lastRecordKey = "";
@@ -690,12 +972,14 @@
 
     function renderNetworkResult(element, result) {
       if (!result) {
-        element.textContent = "无结果 / No result";
+        element.dataset.dynamic = "true";
+        element.textContent = t("noResult");
         element.className = "network-result fail";
         return;
       }
 
-      element.textContent = result.output || "无输出 / No output";
+      element.dataset.dynamic = "true";
+      element.textContent = result.output || t("noOutput");
       element.className = `network-result${result.ok ? "" : " fail"}`;
     }
 
@@ -704,7 +988,7 @@
       const data = await resp.json();
 
       if (!resp.ok || !data.ok) {
-        throw new Error(data.error || "读取配置失败 / Failed to load settings");
+        throw new Error(data.error || t("failedLoadSettings"));
       }
 
       currentTargetUrl = data.targetUrl || "";
@@ -716,7 +1000,7 @@
     async function saveSettings() {
       const targetUrl = getTargetUrlFromInput();
       if (!targetUrl) {
-        throw new Error("目标地址不能为空 / Target URL cannot be empty");
+        throw new Error(t("targetUrlEmpty"));
       }
 
       const resp = await fetch(`${API_BASE}/api/settings`, {
@@ -728,7 +1012,7 @@
       const data = await resp.json();
 
       if (!resp.ok || !data.ok) {
-        throw new Error(data.error || "保存配置失败 / Failed to save settings");
+        throw new Error(data.error || t("failedSaveSettings"));
       }
 
       currentTargetUrl = data.targetUrl;
@@ -740,26 +1024,23 @@
     async function openLoginBrowser() {
       try {
         const targetUrl = ensureTargetUrl();
-        updateStatus(`状态 / Status: 正在打开浏览器 / Opening browser\n目标地址 / Target URL: ${targetUrl}`, "warn");
+        updateStatus(t("openingBrowser", { url: targetUrl }), "warn");
 
         const resp = await fetch(`${API_BASE}/api/open-browser`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUrl })
+          body: JSON.stringify({ targetUrl, lang: currentLang })
         });
 
         const data = await resp.json();
 
         if (!resp.ok || !data.ok) {
-          throw new Error(data.error || "打开浏览器失败 / Failed to open browser");
+          throw new Error(data.error || t("failedOpenBrowser", { message: "" }));
         }
 
-        updateStatus(
-          `状态 / Status: 浏览器已打开 / Browser opened\n目标地址 / Target URL: ${data.targetUrl}\n请在弹出的浏览器中手动完成登录，然后回到本页面启动监测。 / Please complete login in the opened browser, then come back and start monitoring.`,
-          "ok"
-        );
+        updateStatus(t("browserOpened", { url: data.targetUrl }), "ok");
       } catch (err) {
-        updateStatus(`状态 / Status: 打开浏览器失败 / Failed to open browser\n${err.message}`, "alert");
+        updateStatus(t("failedOpenBrowser", { message: err.message }), "alert");
       }
     }
 
@@ -771,13 +1052,13 @@
         const resp = await fetch(`${API_BASE}/api/check-login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUrl, keywords })
+          body: JSON.stringify({ targetUrl, keywords, lang: currentLang })
         });
 
         const data = await resp.json();
 
         if (!resp.ok || !data.ok) {
-          throw new Error(data.error || "检测失败 / Check failed");
+          throw new Error(data.error || t("checkFailed"));
         }
 
         if (data.loggedOut) {
@@ -785,7 +1066,15 @@
           const allowAlarm = now - lastAlarmTime > 30000;
 
           updateStatus(
-            `状态 / Status: 疑似掉登录 / Suspected logout\n目标地址 / Target URL: ${data.targetUrl}\n检测时间 / Checked at: ${data.checkedAt}\n当前地址 / Current URL: ${data.currentUrl}\n命中URL特征 / URL hits: ${data.hitLoginUrlKeywords.join("、") || "无 / None"}\n命中文字 / Text hits: ${data.hitTextKeywords.join("、") || "无 / None"}\n密码框 / Password inputs: ${data.hasPasswordInput}\n登录按钮 / Login buttons: ${data.hasLoginButton}`,
+            t("suspectedLogoutStatus", {
+              targetUrl: data.targetUrl,
+              checkedAt: data.checkedAt,
+              currentUrl: data.currentUrl,
+              urlHits: data.hitLoginUrlKeywords.join("、") || t("none"),
+              textHits: data.hitTextKeywords.join("、") || t("none"),
+              passwordInputs: data.hasPasswordInput,
+              loginButtons: data.hasLoginButton
+            }),
             "alert"
           );
 
@@ -798,13 +1087,14 @@
           if (allowAlarm) {
             lastAlarmTime = now;
             playAlarmSound();
-            alert("检测到目标页面疑似掉登录，请立即处理。\nSuspected logout detected on the target page. Please handle it immediately.");
+            alert(t("logoutAlert"));
           }
         } else {
-          updateStatus(
-            `状态 / Status: 登录正常 / Login OK\n目标地址 / Target URL: ${data.targetUrl}\n检测时间 / Checked at: ${data.checkedAt}\n当前地址 / Current URL: ${data.currentUrl}`,
-            "ok"
-          );
+          updateStatus(t("loginOkStatus", {
+            targetUrl: data.targetUrl,
+            checkedAt: data.checkedAt,
+            currentUrl: data.currentUrl
+          }), "ok");
 
           if (wasLoggedOut) {
             addRecoverRecord(data);
@@ -812,25 +1102,25 @@
           }
         }
       } catch (err) {
-        updateStatus(`状态 / Status: 检测失败 / Check failed\n${err.message}`, "alert");
+        updateStatus(t("checkFailedStatus", { message: err.message }), "alert");
       }
     }
 
     async function runNetworkDiagnostics() {
       try {
         const targetUrl = ensureTargetUrl();
-        updateNetworkStatus(`状态 / Status: 正在执行网络检测 / Running diagnostics\n目标地址 / Target URL: ${targetUrl}`, "warn");
+        updateNetworkStatus(t("runningDiagnostics", { url: targetUrl }), "warn");
 
         const resp = await fetch(`${API_BASE}/api/network-diagnostics`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUrl })
+          body: JSON.stringify({ targetUrl, lang: currentLang })
         });
 
         const data = await resp.json();
 
         if (!resp.ok || !data.ok) {
-          throw new Error(data.error || "网络检测失败 / Network diagnostics failed");
+          throw new Error(data.error || t("networkFailed"));
         }
 
         renderNetworkResult(networkResultMap.dns, data.results.dns);
@@ -844,12 +1134,13 @@
         renderNetworkResult(networkResultMap.traceroute, data.results.traceroute);
 
         const hasFailure = Object.values(data.results).some(item => !item.ok);
-        updateNetworkStatus(
-          `状态 / Status: 网络检测完成 / Diagnostics completed\n检测时间 / Checked at: ${data.checkedAt}\n目标主机 / Target host: ${data.host}:${data.port}\n检测项 / Checks: 9`,
-          hasFailure ? "warn" : "ok"
-        );
+        updateNetworkStatus(t("diagnosticsCompleted", {
+          checkedAt: data.checkedAt,
+          host: data.host,
+          port: data.port
+        }), hasFailure ? "warn" : "ok");
       } catch (err) {
-        updateNetworkStatus(`状态 / Status: 网络检测失败 / Diagnostics failed\n${err.message}`, "alert");
+        updateNetworkStatus(t("diagnosticsFailed", { message: err.message }), "alert");
       }
     }
 
@@ -857,11 +1148,11 @@
       if (monitorTimer) clearInterval(monitorTimer);
 
       monitorRunning = true;
-      monitorBtn.textContent = "停止监测 / Stop Monitor";
+      monitorBtn.textContent = t("stopMonitor");
       monitorBtn.classList.remove("btn-stopped");
       monitorBtn.classList.add("btn-running");
 
-      updateStatus("状态 / Status: 监测已启动 / Monitoring started", "ok");
+      updateStatus(t("monitorStarted"), "ok");
 
       checkLoginState();
       monitorTimer = setInterval(checkLoginState, 30000);
@@ -875,28 +1166,28 @@
         monitorTimer = null;
       }
 
-      monitorBtn.textContent = "启动监测 / Start Monitor";
+      monitorBtn.textContent = t("startMonitor");
       monitorBtn.classList.remove("btn-running");
       monitorBtn.classList.add("btn-stopped");
 
-      updateStatus("状态 / Status: 监测已停止 / Monitoring stopped", "warn");
+      updateStatus(t("monitorStopped"), "warn");
     }
 
     saveConfigBtn.addEventListener("click", async () => {
       try {
         const targetUrl = await saveSettings();
-        updateStatus(`状态 / Status: 目标地址已保存 / Target URL saved\n${targetUrl}`, "ok");
+        updateStatus(t("targetSaved", { url: targetUrl }), "ok");
       } catch (err) {
-        updateStatus(`状态 / Status: 保存目标地址失败 / Failed to save target URL\n${err.message}`, "alert");
+        updateStatus(t("targetSaveFailed", { message: err.message }), "alert");
       }
     });
 
     reloadConfigBtn.addEventListener("click", async () => {
       try {
         const targetUrl = await loadSettings();
-        updateStatus(`状态 / Status: 已重新读取目标地址 / Target URL reloaded\n${targetUrl}`, "ok");
+        updateStatus(t("targetReloaded", { url: targetUrl }), "ok");
       } catch (err) {
-        updateStatus(`状态 / Status: 读取目标地址失败 / Failed to reload target URL\n${err.message}`, "alert");
+        updateStatus(t("targetReloadFailed", { message: err.message }), "alert");
       }
     });
 
@@ -914,16 +1205,27 @@
     clearRecordsBtn.addEventListener("click", () => {
       recordTableBody.innerHTML = `
         <tr class="empty-row" id="emptyRow">
-          <td colspan="4">暂无掉线记录 / No records yet</td>
+          <td colspan="4">${t("noRecords")}</td>
         </tr>
       `;
       lastRecordKey = "";
       wasLoggedOut = false;
     });
 
+    langZhBtn.addEventListener("click", () => {
+      currentLang = "zh";
+      applyLanguage();
+    });
+
+    langEnBtn.addEventListener("click", () => {
+      currentLang = "en";
+      applyLanguage();
+    });
+
+    applyLanguage();
     loadSettings().catch(err => {
-      updateStatus(`状态 / Status: 初始化配置失败 / Failed to initialize settings\n${err.message}`, "alert");
-      updateNetworkStatus(`状态 / Status: 初始化配置失败 / Failed to initialize settings\n${err.message}`, "alert");
+      updateStatus(t("initFailed", { message: err.message }), "alert");
+      updateNetworkStatus(t("initFailed", { message: err.message }), "alert");
       updateCurrentTargetText();
     });
   </script>

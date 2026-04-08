@@ -1,3 +1,13 @@
+<p align="center">
+  <img src="./images/logo.png" width="140" alt="Login Monitor Logo" />
+</p>
+
+<h1 align="center">Login Monitor</h1>
+
+<p align="center">
+  A local dashboard for monitoring business-system login status.
+</p>
+
 # Login Monitor
 
 `Login Monitor` is a local dashboard application for monitoring whether a business web system is still logged in.  
@@ -5,6 +15,11 @@
 
 It is designed for long-running use on an operations desktop or monitoring terminal.  
 它适合长期运行在值守电脑、运维终端或监控工作站上。
+
+## Preview
+
+![预览图1](./images/demo1.png)
+![预览图2](./images/demo2.png)
 
 ## Overview / 项目介绍
 

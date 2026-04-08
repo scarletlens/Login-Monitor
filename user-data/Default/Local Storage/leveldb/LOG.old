@@ -1,3 +1,3 @@
-2026/04/08-17:11:37.424 844b9 Reusing MANIFEST /Users/huhu/Documents/Develop/login-monitor/user-data/Default/Local Storage/leveldb/MANIFEST-000001
-2026/04/08-17:11:37.429 844b9 Recovering log #9
-2026/04/08-17:11:37.430 844b9 Reusing old log /Users/huhu/Documents/Develop/login-monitor/user-data/Default/Local Storage/leveldb/000009.log 
+2026/04/08-18:17:18.854 b11d7 Reusing MANIFEST /Users/huhu/Documents/Develop/login-monitor/Login Monitor/user-data/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/08-18:17:18.857 b11d7 Recovering log #9
+2026/04/08-18:17:18.857 b11d7 Reusing old log /Users/huhu/Documents/Develop/login-monitor/Login Monitor/user-data/Default/Local Storage/leveldb/000009.log 

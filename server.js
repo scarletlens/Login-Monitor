@@ -22,6 +22,7 @@ const PORT = 2333;
 const USER_DATA_DIR = path.join(__dirname, "user-data");
 const CONFIG_FILE = path.join(__dirname, "app-config.json");
 const DEFAULT_TARGET_URL = "https://example.com/";
+const DEFAULT_LANG = "zh";
 
 let browserContext = null;
 let page = null;
@@ -48,23 +49,109 @@ function saveConfig() {
 function normalizeTargetUrl(value) {
   const input = String(value || "").trim();
   if (!input) {
-    throw new Error("目标地址不能为空");
+    throw new Error(MESSAGES.zh.targetUrlEmpty);
   }
 
   const url = new URL(input);
   if (!["http:", "https:"].includes(url.protocol)) {
-    throw new Error("目标地址仅支持 http 或 https 协议");
+    throw new Error(MESSAGES.zh.targetUrlProtocol);
   }
 
   return url.toString();
+}
+
+function normalizeLang(value) {
+  return value === "en" ? "en" : DEFAULT_LANG;
 }
 
 function getCurrentTargetUrl() {
   return appConfig.targetUrl;
 }
 
-function getCheckedAt() {
-  return new Date().toLocaleString("zh-CN", { hour12: false });
+function getCheckedAt(lang = DEFAULT_LANG) {
+  return new Date().toLocaleString(lang === "en" ? "en-US" : "zh-CN", { hour12: false });
+}
+
+const MESSAGES = {
+  zh: {
+    targetUrlEmpty: "目标地址不能为空",
+    targetUrlProtocol: "目标地址仅支持 http 或 https 协议",
+    successNoOutput: "执行成功，无输出",
+    commandFailed: "执行失败",
+    dnsFailed: "DNS 解析失败",
+    requestTimeout: "请求超时",
+    httpStatus: "最终状态",
+    finalUrl: "最终地址",
+    remoteAddress: "远端地址",
+    tcpReachable: "端口 {port} 可连接",
+    connectTime: "建立连接耗时",
+    tcpTimeout: "端口 {port} 连接超时",
+    tcpFailed: "端口 {port} 连接失败",
+    firstByte: "首字节",
+    totalTime: "总耗时",
+    statusCode: "状态码",
+    httpTimingFailed: "HTTP 耗时检测失败",
+    httpCheckFailed: "HTTP 检测失败",
+    httpNoCert: "当前目标使用 HTTP，未启用 HTTPS 证书检测。",
+    certNotFound: "未获取到证书信息",
+    certSubject: "主题",
+    certIssuer: "签发方",
+    certValidFrom: "生效时间",
+    certValidTo: "过期时间",
+    certFailed: "证书检测失败",
+    certTimeout: "证书检测超时",
+    redirectFailed: "重定向链检测失败",
+    sampleCount: "采样次数",
+    successRate: "成功率",
+    fastest: "最快",
+    average: "平均",
+    slowest: "最慢",
+    sampleFailed: "失败"
+  },
+  en: {
+    targetUrlEmpty: "Target URL cannot be empty",
+    targetUrlProtocol: "Target URL must use http or https",
+    successNoOutput: "Command succeeded with no output",
+    commandFailed: "Command failed",
+    dnsFailed: "DNS resolution failed",
+    requestTimeout: "Request timed out",
+    httpStatus: "Final status",
+    finalUrl: "Final URL",
+    remoteAddress: "Remote address",
+    tcpReachable: "Port {port} is reachable",
+    connectTime: "Connection time",
+    tcpTimeout: "Port {port} connection timed out",
+    tcpFailed: "Port {port} connection failed",
+    firstByte: "First byte",
+    totalTime: "Total time",
+    statusCode: "Status code",
+    httpTimingFailed: "HTTP timing check failed",
+    httpCheckFailed: "HTTP check failed",
+    httpNoCert: "The current target uses HTTP, so HTTPS certificate inspection is skipped.",
+    certNotFound: "No certificate information was returned",
+    certSubject: "Subject",
+    certIssuer: "Issuer",
+    certValidFrom: "Valid from",
+    certValidTo: "Valid to",
+    certFailed: "Certificate check failed",
+    certTimeout: "Certificate check timed out",
+    redirectFailed: "Redirect chain check failed",
+    sampleCount: "Samples",
+    successRate: "Success rate",
+    fastest: "Fastest",
+    average: "Average",
+    slowest: "Slowest",
+    sampleFailed: "Failed"
+  }
+};
+
+function t(lang, key, vars = {}) {
+  const dict = MESSAGES[normalizeLang(lang)] || MESSAGES.zh;
+  let template = dict[key] || key;
+  for (const [name, value] of Object.entries(vars)) {
+    template = template.replaceAll(`{${name}}`, String(value));
+  }
+  return template;
 }
 
 async function initBrowser(headless = true) {
@@ -86,7 +173,7 @@ async function closeBrowser() {
   }
 }
 
-async function checkLoginState(targetUrl, extraKeywords = []) {
+async function checkLoginState(targetUrl, extraKeywords = [], lang = DEFAULT_LANG) {
   if (!browserContext || !page) {
     await initBrowser(true);
   }
@@ -126,7 +213,7 @@ async function checkLoginState(targetUrl, extraKeywords = []) {
     hitTextKeywords,
     hasPasswordInput,
     hasLoginButton,
-    checkedAt: getCheckedAt()
+    checkedAt: getCheckedAt(lang)
   };
 }
 
@@ -156,7 +243,7 @@ function createResult(ok, output, extras = {}) {
   };
 }
 
-async function runCommand(command, args, timeout = 10000) {
+async function runCommand(command, args, timeout = 10000, lang = DEFAULT_LANG) {
   try {
     const { stdout, stderr } = await execFileAsync(command, args, {
       timeout,
@@ -165,10 +252,10 @@ async function runCommand(command, args, timeout = 10000) {
 
     return {
       ok: true,
-      output: clipOutput(stdout || stderr || "执行成功，无输出")
+      output: clipOutput(stdout || stderr || t(lang, "successNoOutput"))
     };
   } catch (err) {
-    const output = clipOutput(err.stderr || err.stdout || err.message || "执行失败");
+    const output = clipOutput(err.stderr || err.stdout || err.message || t(lang, "commandFailed"));
     return {
       ok: false,
       output
@@ -176,13 +263,13 @@ async function runCommand(command, args, timeout = 10000) {
   }
 }
 
-async function runDnsCheck(host) {
+async function runDnsCheck(host, lang = DEFAULT_LANG) {
   try {
     const records = await dns.lookup(host, { all: true });
     const lines = records.map(item => `${item.address}${item.family ? ` (IPv${item.family})` : ""}`);
     return createResult(true, lines.join("\n"), { addresses: records });
   } catch (err) {
-    return createResult(false, err.message || "DNS 解析失败");
+    return createResult(false, err.message || t(lang, "dnsFailed"));
   }
 }
 
@@ -209,7 +296,7 @@ function isRedirectStatus(statusCode) {
   return [301, 302, 303, 307, 308].includes(statusCode);
 }
 
-function timedRequest(urlString, timeoutMs = 20000) {
+function timedRequest(urlString, timeoutMs = 20000, lang = DEFAULT_LANG) {
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(urlString);
     const transport = parsedUrl.protocol === "https:" ? https : http;
@@ -266,18 +353,18 @@ function timedRequest(urlString, timeoutMs = 20000) {
 
     req.on("error", reject);
     req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error("请求超时"));
+      req.destroy(new Error(t(lang, "requestTimeout")));
     });
     req.end();
   });
 }
 
-async function followRedirects(targetUrl, maxRedirects = 5) {
+async function followRedirects(targetUrl, maxRedirects = 5, lang = DEFAULT_LANG) {
   const chain = [];
   let currentUrl = targetUrl;
 
   for (let i = 0; i <= maxRedirects; i++) {
-    const response = await timedRequest(currentUrl);
+    const response = await timedRequest(currentUrl, 20000, lang);
     chain.push({
       url: currentUrl,
       statusCode: response.statusCode,
@@ -301,23 +388,23 @@ function formatSeconds(value) {
   return Number.isFinite(value) ? `${value.toFixed(3)}s` : "-";
 }
 
-async function runHttpOverviewCheck(targetUrl) {
+async function runHttpOverviewCheck(targetUrl, lang = DEFAULT_LANG) {
   try {
-    const chain = await followRedirects(targetUrl, 5);
+    const chain = await followRedirects(targetUrl, 5, lang);
     const finalStep = chain[chain.length - 1];
     const lines = [
-      `最终状态: ${finalStep.statusCode}`,
-      `最终地址: ${finalStep.url}`,
-      `远端地址: ${finalStep.remoteAddress || "-"}`,
+      `${t(lang, "httpStatus")}: ${finalStep.statusCode}`,
+      `${t(lang, "finalUrl")}: ${finalStep.url}`,
+      `${t(lang, "remoteAddress")}: ${finalStep.remoteAddress || "-"}`,
       ...formatHeaders(finalStep.headers)
     ];
     return createResult(finalStep.statusCode < 400, lines.join("\n"), { chain });
   } catch (err) {
-    return createResult(false, err.message || "HTTP 检测失败");
+    return createResult(false, err.message || t(lang, "httpCheckFailed"));
   }
 }
 
-async function runTcpCheck(host, port, timeoutMs = 6000) {
+async function runTcpCheck(host, port, timeoutMs = 6000, lang = DEFAULT_LANG) {
   return new Promise(resolve => {
     const socket = new net.Socket();
     const start = performance.now();
@@ -333,39 +420,39 @@ async function runTcpCheck(host, port, timeoutMs = 6000) {
     socket.setTimeout(timeoutMs);
     socket.connect(Number(port), host, () => {
       const duration = ((performance.now() - start) / 1000).toFixed(3);
-      finish(true, `端口 ${port} 可连接\n建立连接耗时: ${duration}s`);
+      finish(true, `${t(lang, "tcpReachable", { port })}\n${t(lang, "connectTime")}: ${duration}s`);
     });
-    socket.on("timeout", () => finish(false, `端口 ${port} 连接超时`));
-    socket.on("error", err => finish(false, `端口 ${port} 连接失败\n${err.message}`));
+    socket.on("timeout", () => finish(false, t(lang, "tcpTimeout", { port })));
+    socket.on("error", err => finish(false, `${t(lang, "tcpFailed", { port })}\n${err.message}`));
   });
 }
 
-async function runTimingCheck(targetUrl) {
+async function runTimingCheck(targetUrl, lang = DEFAULT_LANG) {
   try {
-    const chain = await followRedirects(targetUrl, 5);
+    const chain = await followRedirects(targetUrl, 5, lang);
     const finalStep = chain[chain.length - 1];
-    const t = finalStep.timings;
+    const timings = finalStep.timings;
     return createResult(
       finalStep.statusCode < 400,
       [
-        `DNS: ${formatSeconds(t.dns)}`,
-        `TCP: ${formatSeconds(t.connect)}`,
-        `TLS: ${formatSeconds(t.tls)}`,
-        `首字节: ${formatSeconds(t.firstByte)}`,
-        `总耗时: ${formatSeconds(t.total)}`,
-        `状态码: ${finalStep.statusCode}`,
-        `远端地址: ${finalStep.remoteAddress || "-"}`
+        `DNS: ${formatSeconds(timings.dns)}`,
+        `TCP: ${formatSeconds(timings.connect)}`,
+        `TLS: ${formatSeconds(timings.tls)}`,
+        `${t(lang, "firstByte")}: ${formatSeconds(timings.firstByte)}`,
+        `${t(lang, "totalTime")}: ${formatSeconds(timings.total)}`,
+        `${t(lang, "statusCode")}: ${finalStep.statusCode}`,
+        `${t(lang, "remoteAddress")}: ${finalStep.remoteAddress || "-"}`
       ].join("\n"),
       { chain }
     );
   } catch (err) {
-    return createResult(false, err.message || "HTTP 耗时检测失败");
+    return createResult(false, err.message || t(lang, "httpTimingFailed"));
   }
 }
 
-async function runCertificateCheck({ host, port, protocol }) {
+async function runCertificateCheck({ host, port, protocol }, lang = DEFAULT_LANG) {
   if (protocol !== "https") {
-    return createResult(true, "当前目标使用 HTTP，未启用 HTTPS 证书检测。");
+    return createResult(true, t(lang, "httpNoCert"));
   }
 
   return new Promise(resolve => {
@@ -382,47 +469,47 @@ async function runCertificateCheck({ host, port, protocol }) {
         socket.end();
 
         if (!cert || !Object.keys(cert).length) {
-          resolve(createResult(false, "未获取到证书信息"));
+          resolve(createResult(false, t(lang, "certNotFound")));
           return;
         }
 
         const lines = [
-          `主题: ${cert.subject?.CN || "-"}`,
-          `签发方: ${cert.issuer?.CN || cert.issuer?.O || "-"}`,
-          `生效时间: ${cert.valid_from || "-"}`,
-          `过期时间: ${cert.valid_to || "-"}`
+          `${t(lang, "certSubject")}: ${cert.subject?.CN || "-"}`,
+          `${t(lang, "certIssuer")}: ${cert.issuer?.CN || cert.issuer?.O || "-"}`,
+          `${t(lang, "certValidFrom")}: ${cert.valid_from || "-"}`,
+          `${t(lang, "certValidTo")}: ${cert.valid_to || "-"}`
         ];
 
         resolve(createResult(true, lines.join("\n")));
       }
     );
 
-    socket.on("error", err => resolve(createResult(false, err.message || "证书检测失败")));
+    socket.on("error", err => resolve(createResult(false, err.message || t(lang, "certFailed"))));
     socket.on("timeout", () => {
       socket.destroy();
-      resolve(createResult(false, "证书检测超时"));
+      resolve(createResult(false, t(lang, "certTimeout")));
     });
   });
 }
 
-async function runRedirectChainCheck(targetUrl) {
+async function runRedirectChainCheck(targetUrl, lang = DEFAULT_LANG) {
   try {
-    const chain = await followRedirects(targetUrl, 5);
+    const chain = await followRedirects(targetUrl, 5, lang);
     const lines = chain.map((step, index) => {
       const nextText = step.location ? ` -> ${new URL(step.location, step.url).toString()}` : "";
       return `${index + 1}. [${step.statusCode}] ${step.url}${nextText}`;
     });
     return createResult(true, lines.join("\n"), { chain });
   } catch (err) {
-    return createResult(false, err.message || "重定向链检测失败");
+    return createResult(false, err.message || t(lang, "redirectFailed"));
   }
 }
 
-async function runHttpSampleCheck(targetUrl, sampleCount = 5) {
+async function runHttpSampleCheck(targetUrl, sampleCount = 5, lang = DEFAULT_LANG) {
   const runs = await Promise.all(
     Array.from({ length: sampleCount }, async (_, index) => {
       try {
-        const chain = await followRedirects(targetUrl, 5);
+        const chain = await followRedirects(targetUrl, 5, lang);
         const finalStep = chain[chain.length - 1];
         return {
           ok: finalStep.statusCode < 400,
@@ -434,7 +521,7 @@ async function runHttpSampleCheck(targetUrl, sampleCount = 5) {
         return {
           ok: false,
           index: index + 1,
-          error: err.message || "请求失败"
+          error: err.message || t(lang, "commandFailed")
         };
       }
     })
@@ -443,17 +530,17 @@ async function runHttpSampleCheck(targetUrl, sampleCount = 5) {
   const totals = runs.filter(run => Number.isFinite(run.total)).map(run => run.total);
   const successCount = runs.filter(run => run.ok).length;
   const lines = [
-    `采样次数: ${sampleCount}`,
-    `成功率: ${successCount}/${sampleCount}`
+    `${t(lang, "sampleCount")}: ${sampleCount}`,
+    `${t(lang, "successRate")}: ${successCount}/${sampleCount}`
   ];
 
   if (totals.length) {
     const min = Math.min(...totals);
     const max = Math.max(...totals);
     const avg = totals.reduce((sum, value) => sum + value, 0) / totals.length;
-    lines.push(`最快: ${min.toFixed(3)}s`);
-    lines.push(`平均: ${avg.toFixed(3)}s`);
-    lines.push(`最慢: ${max.toFixed(3)}s`);
+    lines.push(`${t(lang, "fastest")}: ${min.toFixed(3)}s`);
+    lines.push(`${t(lang, "average")}: ${avg.toFixed(3)}s`);
+    lines.push(`${t(lang, "slowest")}: ${max.toFixed(3)}s`);
   }
 
   lines.push("");
@@ -461,48 +548,48 @@ async function runHttpSampleCheck(targetUrl, sampleCount = 5) {
     if (run.ok) {
       lines.push(`${run.index}. ${run.total.toFixed(3)}s [${run.statusCode}]`);
     } else {
-      lines.push(`${run.index}. 失败 ${run.error}`);
+      lines.push(`${run.index}. ${t(lang, "sampleFailed")} ${run.error}`);
     }
   }
 
   return createResult(successCount === sampleCount, lines.join("\n"), { runs });
 }
 
-async function runTracerouteCheck(host) {
+async function runTracerouteCheck(host, lang = DEFAULT_LANG) {
   const isWindows = process.platform === "win32";
   const command = isWindows ? "tracert" : "traceroute";
   const args = isWindows
     ? ["-d", "-h", "8", "-w", "1000", host]
     : ["-m", "8", "-w", "1", host];
-  return runCommand(command, args, 25000);
+  return runCommand(command, args, 25000, lang);
 }
 
-async function runPingCheck(host) {
+async function runPingCheck(host, lang = DEFAULT_LANG) {
   const isWindows = process.platform === "win32";
   const args = isWindows ? ["-n", "4", host] : ["-c", "4", host];
-  return runCommand("ping", args, 10000);
+  return runCommand("ping", args, 10000, lang);
 }
 
-async function runNetworkDiagnostics(targetUrl) {
+async function runNetworkDiagnostics(targetUrl, lang = DEFAULT_LANG) {
   const target = parseTarget(targetUrl);
   const { host, port } = target;
 
   const checks = await Promise.all([
-    runDnsCheck(host),
-    runPingCheck(host),
-    runHttpOverviewCheck(targetUrl),
-    runTcpCheck(host, port),
-    runTimingCheck(targetUrl),
-    runCertificateCheck(target),
-    runRedirectChainCheck(targetUrl),
-    runHttpSampleCheck(targetUrl, 5),
-    runTracerouteCheck(host)
+    runDnsCheck(host, lang),
+    runPingCheck(host, lang),
+    runHttpOverviewCheck(targetUrl, lang),
+    runTcpCheck(host, port, 6000, lang),
+    runTimingCheck(targetUrl, lang),
+    runCertificateCheck(target, lang),
+    runRedirectChainCheck(targetUrl, lang),
+    runHttpSampleCheck(targetUrl, 5, lang),
+    runTracerouteCheck(host, lang)
   ]);
 
   return {
     ok: true,
     targetUrl,
-    checkedAt: getCheckedAt(),
+    checkedAt: getCheckedAt(lang),
     host,
     port,
     results: {
@@ -573,7 +660,8 @@ app.post("/api/check-login", async (req, res) => {
   try {
     const targetUrl = normalizeTargetUrl(req.body?.targetUrl || getCurrentTargetUrl());
     const keywords = Array.isArray(req.body?.keywords) ? req.body.keywords : [];
-    const result = await checkLoginState(targetUrl, keywords);
+    const lang = normalizeLang(req.body?.lang);
+    const result = await checkLoginState(targetUrl, keywords, lang);
     res.json(result);
   } catch (err) {
     res.status(500).json({
@@ -586,7 +674,8 @@ app.post("/api/check-login", async (req, res) => {
 app.post("/api/network-diagnostics", async (req, res) => {
   try {
     const targetUrl = normalizeTargetUrl(req.body?.targetUrl || getCurrentTargetUrl());
-    const result = await runNetworkDiagnostics(targetUrl);
+    const lang = normalizeLang(req.body?.lang);
+    const result = await runNetworkDiagnostics(targetUrl, lang);
     res.json(result);
   } catch (err) {
     res.status(500).json({
