@@ -263,6 +263,4 @@ node --check server.js
 ```
 
 ## License / 许可证
-
-The current `package.json` declares the license as `ISC`.  
-当前项目 `package.json` 中声明的许可证为 `ISC`。
+This project is licensed under the MIT License.
