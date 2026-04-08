@@ -5,10 +5,7 @@
 <h1 align="center">Login Monitor</h1>
 
 <p align="center">
- `Login Monitor` is a local dashboard application for monitoring whether a business web system is still logged in.  
  `Login Monitor` 是一个用于监测业务系统登录状态的本地大屏应用。
-  It is designed for long-running use on an operations desktop or monitoring terminal.  
-  它适合长期运行在值守电脑、运维终端或监控工作站上。
 </p>
 
 ## Preview / 预览
