@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录监测大屏 / Login Monitor Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0b1220;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
+
+    .bg-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.28);
+      z-index: 1;
+    }
+
+    .record-panel,
+    .control-panel {
+      position: absolute;
+      top: 22px;
+      z-index: 10;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+      backdrop-filter: blur(10px);
+      color: rgba(255,255,255,0.95);
+    }
+
+    .record-panel {
+      left: 42px;
+      width: 680px;
+      height: calc(100% - 44px);
+      padding: 14px 18px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .control-panel {
+      right: 42px;
+      width: calc(100% - 806px);
+      min-width: 640px;
+      height: calc(100% - 44px);
+      padding: 14px 22px 18px;
+      overflow: auto;
+    }
+
+    .panel-title,
+    .control-title {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.08fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .record-toolbar,
+    .action-row,
+    .network-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .toolbar-btn,
+    .panel-btn {
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .toolbar-btn:hover,
+    .panel-btn:hover {
+      background: rgba(255,255,255,0.14);
+    }
+
+    .panel-btn {
+      flex: 1;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: rgba(59,130,246,0.22);
+      border-color: rgba(59,130,246,0.45);
+    }
+
+    .btn-running {
+      background: rgba(34, 197, 94, 0.22);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    .btn-stopped {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(14, 165, 233, 0.18);
+      border-color: rgba(14, 165, 233, 0.36);
+    }
+
+    .record-table-wrap {
+      flex: 1;
+      overflow: auto;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .record-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .record-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(17, 24, 39, 0.96);
+    }
+
+    .record-table th,
+    .record-table td {
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 10px;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+
+    .record-table th:nth-child(1),
+    .record-table td:nth-child(1) {
+      width: 160px;
+    }
+
+    .record-table th:nth-child(2),
+    .record-table td:nth-child(2) {
+      width: 90px;
+      text-align: center;
+    }
+
+    .record-table th:nth-child(3),
+    .record-table td:nth-child(3) {
+      width: 180px;
+    }
+
+    .record-table th:nth-child(4),
+    .record-table td:nth-child(4) {
+      width: auto;
+    }
+
+    .empty-row td {
+      text-align: center;
+      color: rgba(255,255,255,0.6);
+      padding: 30px 12px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      min-width: 68px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-alert {
+      background: rgba(239, 68, 68, 0.18);
+      color: #ffd8d8;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .status-recover {
+      background: rgba(34, 197, 94, 0.16);
+      color: #d8ffe6;
+      border: 1px solid rgba(34, 197, 94, 0.32);
+    }
+
+    .block {
+      padding: 18px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.16);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .block-span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .block-title {
+      font-size: 15px;
+      margin-bottom: 14px;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.72);
+    }
+
+    .input,
+    .keyword-input {
+      width: 100%;
+      min-height: 40px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .input::placeholder,
+    .keyword-input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+
+    .helper-text {
+      margin: 0 0 18px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.62);
+    }
+
+    .current-target {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.72);
+      word-break: break-all;
+    }
+
+    .alarm-status,
+    .network-status,
+    .network-result {
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .alarm-status,
+    .network-status {
+      min-height: 92px;
+      padding: 10px 12px;
+    }
+
+    .login-block .panel-btn {
+      margin-bottom: 14px;
+    }
+
+    .login-block .field-label {
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+
+    .login-block .keyword-input {
+      margin-bottom: 20px;
+    }
+
+    .login-block .alarm-status {
+      min-height: 112px;
+      margin-top: 2px;
+    }
+
+    .alarm-status.alert,
+    .network-status.alert {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #ffd8d8;
+    }
+
+    .alarm-status.ok,
+    .network-status.ok {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.28);
+      color: #d8ffe6;
+    }
+
+    .alarm-status.warn,
+    .network-status.warn {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.28);
+      color: #ffe9bf;
+    }
+
+    .network-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .network-summary {
+      margin-bottom: 12px;
+    }
+
+    .network-card {
+      min-width: 0;
+    }
+
+    .network-card.span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .network-card-title {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: rgba(255,255,255,0.82);
+    }
+
+    .network-result {
+      min-height: 82px;
+      max-height: 180px;
+      overflow: auto;
+      padding: 10px 12px;
+    }
+
+    .network-result.tall {
+      min-height: 120px;
+      max-height: 240px;
+    }
+
+    .network-result.fail {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    @media (max-width: 1480px) {
+      html, body {
+        overflow: auto;
+      }
+
+      .screen {
+        min-height: 100vh;
+        height: auto;
+        padding-bottom: 22px;
+      }
+
+      .record-panel,
+      .control-panel {
+        position: static;
+        width: auto;
+        min-width: 0;
+        height: auto;
+        margin: 22px 42px 0;
+      }
+
+      .control-grid,
+      .network-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .block-span-2 {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <img class="bg-img" src="./bg.jpg" />
+    <div class="bg-mask"></div>
+
+    <div class="record-panel">
+      <div class="panel-title">掉线记录 / Logout Records</div>
+
+      <div class="record-toolbar">
+        <button id="clearRecordsBtn" class="toolbar-btn">清空记录 / Clear</button>
+      </div>
+
+      <div class="record-table-wrap">
+        <table class="record-table">
+          <thead>
+            <tr>
+              <th>掉线时间 / Time</th>
+              <th>状态 / Status</th>
+              <th>页面地址 / URL</th>
+              <th>掉线记录 / Detail</th>
+            </tr>
+          </thead>
+          <tbody id="recordTableBody">
+            <tr class="empty-row" id="emptyRow">
+              <td colspan="4">暂无掉线记录 / No records yet</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="control-title">业务系统登录态监测 / Business Login Monitor</div>
+
+      <div class="control-grid">
+        <div class="block block-span-2">
+          <div class="block-title">目标页面 / Target Page</div>
+          <label class="field-label" for="targetUrlInput">监测地址 / Target URL</label>
+          <input
+            id="targetUrlInput"
+            class="input"
+            type="url"
+            placeholder="请输入完整地址 / Enter full URL, e.g. https://example.com/workbench"
+          />
+          <div class="action-row">
+            <button id="saveConfigBtn" class="panel-btn btn-secondary">保存地址 / Save URL</button>
+            <button id="reloadConfigBtn" class="panel-btn">重新读取 / Reload</button>
+          </div>
+          <div id="currentTargetText" class="current-target">当前目标地址 / Current target: 读取中 / Loading...</div>
+        </div>
+
+        <div class="block login-block">
+          <div class="block-title">登录态监测 / Login Monitoring</div>
+          <p class="helper-text">先保存目标地址，再点击“打开浏览器登录”完成一次人工登录。之后可以直接启动自动监测。 / Save the target URL first, then click "Open Browser Login" to complete a manual login once. After that, you can start automated monitoring.</p>
+
+          <button id="openBrowserBtn" class="panel-btn btn-primary">打开浏览器登录 / Open Browser Login</button>
+
+          <label class="field-label" for="keywordInput">附加掉线关键词 / Extra Logout Keywords</label>
+          <input
+            id="keywordInput"
+            class="keyword-input"
+            type="text"
+            placeholder="可选 / Optional: 会话失效,重新登录,用户未登录"
+          />
+
+          <button id="monitorBtn" class="panel-btn btn-stopped">启动监测 / Start Monitor</button>
+
+          <div id="alarmStatus" class="alarm-status warn">状态 / Status: 未启动 / Not started</div>
+        </div>
+
+        <div class="block">
+          <div class="block-title">网络诊断 / Network Diagnostics</div>
+          <p class="helper-text">包含 DNS、Ping、HTTP、TCP 探测、HTTP 耗时、HTTPS 证书、重定向链、连续采样和 Traceroute。 / Includes DNS, Ping, HTTP, TCP probe, timing, HTTPS certificate, redirect chain, repeated samples, and Traceroute.</p>
+
+          <div class="network-actions">
+            <button id="runNetworkBtn" class="panel-btn btn-primary">执行网络检测 / Run Diagnostics</button>
+          </div>
+
+          <div id="networkStatus" class="network-status warn network-summary">状态 / Status: 等待执行 / Waiting</div>
+
+          <div class="network-grid">
+            <div class="network-card">
+              <div class="network-card-title">DNS 解析 / DNS Resolution</div>
+              <div id="dnsResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">Ping 连通性 / Ping Reachability</div>
+              <div id="pingResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">HTTP 响应概览 / HTTP Overview</div>
+              <div id="curlResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">TCP 端口探测 / TCP Port Probe</div>
+              <div id="tcpResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">HTTP 耗时分析 / HTTP Timing</div>
+              <div id="timingResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">HTTPS 证书检测 / HTTPS Certificate</div>
+              <div id="certificateResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card">
+              <div class="network-card-title">重定向链分析 / Redirect Chain</div>
+              <div id="redirectResult" class="network-result">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card span-2">
+              <div class="network-card-title">多次请求采样 / Repeated Samples</div>
+              <div id="sampleResult" class="network-result tall">尚未执行 / Not started</div>
+            </div>
+            <div class="network-card span-2">
+              <div class="network-card-title">Traceroute 链路分析 / Traceroute Path</div>
+              <div id="tracerouteResult" class="network-result tall">尚未执行 / Not started</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:2333";
+
+    const targetUrlInput = document.getElementById("targetUrlInput");
+    const saveConfigBtn = document.getElementById("saveConfigBtn");
+    const reloadConfigBtn = document.getElementById("reloadConfigBtn");
+    const currentTargetText = document.getElementById("currentTargetText");
+    const openBrowserBtn = document.getElementById("openBrowserBtn");
+    const monitorBtn = document.getElementById("monitorBtn");
+    const alarmStatus = document.getElementById("alarmStatus");
+    const keywordInput = document.getElementById("keywordInput");
+    const recordTableBody = document.getElementById("recordTableBody");
+    const clearRecordsBtn = document.getElementById("clearRecordsBtn");
+    const runNetworkBtn = document.getElementById("runNetworkBtn");
+    const networkStatus = document.getElementById("networkStatus");
+
+    const networkResultMap = {
+      dns: document.getElementById("dnsResult"),
+      ping: document.getElementById("pingResult"),
+      curl: document.getElementById("curlResult"),
+      tcp: document.getElementById("tcpResult"),
+      httpTiming: document.getElementById("timingResult"),
+      certificate: document.getElementById("certificateResult"),
+      redirectChain: document.getElementById("redirectResult"),
+      httpSamples: document.getElementById("sampleResult"),
+      traceroute: document.getElementById("tracerouteResult")
+    };
+
+    let monitorTimer = null;
+    let monitorRunning = false;
+    let lastAlarmTime = 0;
+    let lastRecordKey = "";
+    let wasLoggedOut = false;
+    let currentTargetUrl = "";
+
+    function updateCurrentTargetText() {
+      currentTargetText.textContent = currentTargetUrl
+        ? `当前目标地址 / Current target: ${currentTargetUrl}`
+        : "当前目标地址 / Current target: 未配置 / Not configured";
+    }
+
+    function updateStatus(message, type = "warn") {
+      alarmStatus.textContent = message;
+      alarmStatus.className = `alarm-status ${type}`;
+    }
+
+    function updateNetworkStatus(message, type = "warn") {
+      networkStatus.textContent = message;
+      networkStatus.className = `network-status ${type}`;
+    }
+
+    function getTargetUrlFromInput() {
+      return targetUrlInput.value.trim();
+    }
+
+    function ensureTargetUrl() {
+      const targetUrl = getTargetUrlFromInput() || currentTargetUrl;
+
+      if (!targetUrl) {
+        throw new Error("请先填写并保存目标地址 / Please enter and save the target URL first");
+      }
+
+      return targetUrl;
+    }
+
+    function getExtraKeywords() {
+      return keywordInput.value
+        .split(/[,，]/)
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
+    function playAlarmSound() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+        const now = audioCtx.currentTime;
+
+        for (let i = 0; i < 3; i++) {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+
+          oscillator.type = "sine";
+          oscillator.frequency.setValueAtTime(880, now + i * 0.35);
+
+          gainNode.gain.setValueAtTime(0.0001, now + i * 0.35);
+          gainNode.gain.exponentialRampToValueAtTime(0.25, now + i * 0.35 + 0.02);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.35 + 0.25);
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          oscillator.start(now + i * 0.35);
+          oscillator.stop(now + i * 0.35 + 0.25);
+        }
+      } catch (err) {
+        console.error("报警音播放失败 / Failed to play alert sound:", err);
+      }
+    }
+
+    function addRecordRow(time, statusText, url, detail, type = "alert") {
+      const emptyRow = document.getElementById("emptyRow");
+      if (emptyRow) {
+        emptyRow.remove();
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${time}</td>
+        <td>
+          <span class="status-badge ${type === "alert" ? "status-alert" : "status-recover"}">
+            ${statusText}
+          </span>
+        </td>
+        <td>${url || "-"}</td>
+        <td>${detail || "-"}</td>
+      `;
+
+      recordTableBody.insertBefore(tr, recordTableBody.firstChild);
+    }
+
+    function addLogoutRecord(data) {
+      const detailParts = [];
+
+      if (data.hitLoginUrlKeywords?.length) {
+        detailParts.push(`命中URL特征 / URL hits: ${data.hitLoginUrlKeywords.join("、")}`);
+      }
+      if (data.hitTextKeywords?.length) {
+        detailParts.push(`命中文字 / Text hits: ${data.hitTextKeywords.join("、")}`);
+      }
+      if (data.hasPasswordInput > 0) {
+        detailParts.push(`检测到密码框 / Password inputs: ${data.hasPasswordInput}`);
+      }
+      if (data.hasLoginButton > 0) {
+        detailParts.push(`检测到登录按钮 / Login buttons: ${data.hasLoginButton}`);
+      }
+
+      const detail = detailParts.join("；") || "检测到疑似掉登录 / Suspected logout detected";
+      const recordKey = `${data.currentUrl}|${detail}`;
+
+      if (recordKey === lastRecordKey) return;
+      lastRecordKey = recordKey;
+
+      addRecordRow(data.checkedAt, "掉线 / Logout", data.currentUrl, detail, "alert");
+    }
+
+    function addRecoverRecord(data) {
+      addRecordRow(
+        data.checkedAt,
+        "恢复 / Recovered",
+        data.currentUrl,
+        "页面访问正常，登录状态恢复 / Page access restored and login state recovered",
+        "recover"
+      );
+      lastRecordKey = "";
+    }
+
+    function renderNetworkResult(element, result) {
+      if (!result) {
+        element.textContent = "无结果 / No result";
+        element.className = "network-result fail";
+        return;
+      }
+
+      element.textContent = result.output || "无输出 / No output";
+      element.className = `network-result${result.ok ? "" : " fail"}`;
+    }
+
+    async function loadSettings() {
+      const resp = await fetch(`${API_BASE}/api/settings`);
+      const data = await resp.json();
+
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || "读取配置失败 / Failed to load settings");
+      }
+
+      currentTargetUrl = data.targetUrl || "";
+      targetUrlInput.value = currentTargetUrl;
+      updateCurrentTargetText();
+      return currentTargetUrl;
+    }
+
+    async function saveSettings() {
+      const targetUrl = getTargetUrlFromInput();
+      if (!targetUrl) {
+        throw new Error("目标地址不能为空 / Target URL cannot be empty");
+      }
+
+      const resp = await fetch(`${API_BASE}/api/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl })
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || "保存配置失败 / Failed to save settings");
+      }
+
+      currentTargetUrl = data.targetUrl;
+      targetUrlInput.value = currentTargetUrl;
+      updateCurrentTargetText();
+      return data.targetUrl;
+    }
+
+    async function openLoginBrowser() {
+      try {
+        const targetUrl = ensureTargetUrl();
+        updateStatus(`状态 / Status: 正在打开浏览器 / Opening browser\n目标地址 / Target URL: ${targetUrl}`, "warn");
+
+        const resp = await fetch(`${API_BASE}/api/open-browser`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUrl })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || "打开浏览器失败 / Failed to open browser");
+        }
+
+        updateStatus(
+          `状态 / Status: 浏览器已打开 / Browser opened\n目标地址 / Target URL: ${data.targetUrl}\n请在弹出的浏览器中手动完成登录，然后回到本页面启动监测。 / Please complete login in the opened browser, then come back and start monitoring.`,
+          "ok"
+        );
+      } catch (err) {
+        updateStatus(`状态 / Status: 打开浏览器失败 / Failed to open browser\n${err.message}`, "alert");
+      }
+    }
+
+    async function checkLoginState() {
+      const keywords = getExtraKeywords();
+
+      try {
+        const targetUrl = ensureTargetUrl();
+        const resp = await fetch(`${API_BASE}/api/check-login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUrl, keywords })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || "检测失败 / Check failed");
+        }
+
+        if (data.loggedOut) {
+          const now = Date.now();
+          const allowAlarm = now - lastAlarmTime > 30000;
+
+          updateStatus(
+            `状态 / Status: 疑似掉登录 / Suspected logout\n目标地址 / Target URL: ${data.targetUrl}\n检测时间 / Checked at: ${data.checkedAt}\n当前地址 / Current URL: ${data.currentUrl}\n命中URL特征 / URL hits: ${data.hitLoginUrlKeywords.join("、") || "无 / None"}\n命中文字 / Text hits: ${data.hitTextKeywords.join("、") || "无 / None"}\n密码框 / Password inputs: ${data.hasPasswordInput}\n登录按钮 / Login buttons: ${data.hasLoginButton}`,
+            "alert"
+          );
+
+          addLogoutRecord(data);
+
+          if (!wasLoggedOut) {
+            wasLoggedOut = true;
+          }
+
+          if (allowAlarm) {
+            lastAlarmTime = now;
+            playAlarmSound();
+            alert("检测到目标页面疑似掉登录，请立即处理。\nSuspected logout detected on the target page. Please handle it immediately.");
+          }
+        } else {
+          updateStatus(
+            `状态 / Status: 登录正常 / Login OK\n目标地址 / Target URL: ${data.targetUrl}\n检测时间 / Checked at: ${data.checkedAt}\n当前地址 / Current URL: ${data.currentUrl}`,
+            "ok"
+          );
+
+          if (wasLoggedOut) {
+            addRecoverRecord(data);
+            wasLoggedOut = false;
+          }
+        }
+      } catch (err) {
+        updateStatus(`状态 / Status: 检测失败 / Check failed\n${err.message}`, "alert");
+      }
+    }
+
+    async function runNetworkDiagnostics() {
+      try {
+        const targetUrl = ensureTargetUrl();
+        updateNetworkStatus(`状态 / Status: 正在执行网络检测 / Running diagnostics\n目标地址 / Target URL: ${targetUrl}`, "warn");
+
+        const resp = await fetch(`${API_BASE}/api/network-diagnostics`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUrl })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || "网络检测失败 / Network diagnostics failed");
+        }
+
+        renderNetworkResult(networkResultMap.dns, data.results.dns);
+        renderNetworkResult(networkResultMap.ping, data.results.ping);
+        renderNetworkResult(networkResultMap.curl, data.results.curl);
+        renderNetworkResult(networkResultMap.tcp, data.results.tcp);
+        renderNetworkResult(networkResultMap.httpTiming, data.results.httpTiming);
+        renderNetworkResult(networkResultMap.certificate, data.results.certificate);
+        renderNetworkResult(networkResultMap.redirectChain, data.results.redirectChain);
+        renderNetworkResult(networkResultMap.httpSamples, data.results.httpSamples);
+        renderNetworkResult(networkResultMap.traceroute, data.results.traceroute);
+
+        const hasFailure = Object.values(data.results).some(item => !item.ok);
+        updateNetworkStatus(
+          `状态 / Status: 网络检测完成 / Diagnostics completed\n检测时间 / Checked at: ${data.checkedAt}\n目标主机 / Target host: ${data.host}:${data.port}\n检测项 / Checks: 9`,
+          hasFailure ? "warn" : "ok"
+        );
+      } catch (err) {
+        updateNetworkStatus(`状态 / Status: 网络检测失败 / Diagnostics failed\n${err.message}`, "alert");
+      }
+    }
+
+    function startMonitor() {
+      if (monitorTimer) clearInterval(monitorTimer);
+
+      monitorRunning = true;
+      monitorBtn.textContent = "停止监测 / Stop Monitor";
+      monitorBtn.classList.remove("btn-stopped");
+      monitorBtn.classList.add("btn-running");
+
+      updateStatus("状态 / Status: 监测已启动 / Monitoring started", "ok");
+
+      checkLoginState();
+      monitorTimer = setInterval(checkLoginState, 30000);
+    }
+
+    function stopMonitor() {
+      monitorRunning = false;
+
+      if (monitorTimer) {
+        clearInterval(monitorTimer);
+        monitorTimer = null;
+      }
+
+      monitorBtn.textContent = "启动监测 / Start Monitor";
+      monitorBtn.classList.remove("btn-running");
+      monitorBtn.classList.add("btn-stopped");
+
+      updateStatus("状态 / Status: 监测已停止 / Monitoring stopped", "warn");
+    }
+
+    saveConfigBtn.addEventListener("click", async () => {
+      try {
+        const targetUrl = await saveSettings();
+        updateStatus(`状态 / Status: 目标地址已保存 / Target URL saved\n${targetUrl}`, "ok");
+      } catch (err) {
+        updateStatus(`状态 / Status: 保存目标地址失败 / Failed to save target URL\n${err.message}`, "alert");
+      }
+    });
+
+    reloadConfigBtn.addEventListener("click", async () => {
+      try {
+        const targetUrl = await loadSettings();
+        updateStatus(`状态 / Status: 已重新读取目标地址 / Target URL reloaded\n${targetUrl}`, "ok");
+      } catch (err) {
+        updateStatus(`状态 / Status: 读取目标地址失败 / Failed to reload target URL\n${err.message}`, "alert");
+      }
+    });
+
+    openBrowserBtn.addEventListener("click", openLoginBrowser);
+    runNetworkBtn.addEventListener("click", runNetworkDiagnostics);
+
+    monitorBtn.addEventListener("click", () => {
+      if (monitorRunning) {
+        stopMonitor();
+      } else {
+        startMonitor();
+      }
+    });
+
+    clearRecordsBtn.addEventListener("click", () => {
+      recordTableBody.innerHTML = `
+        <tr class="empty-row" id="emptyRow">
+          <td colspan="4">暂无掉线记录 / No records yet</td>
+        </tr>
+      `;
+      lastRecordKey = "";
+      wasLoggedOut = false;
+    });
+
+    loadSettings().catch(err => {
+      updateStatus(`状态 / Status: 初始化配置失败 / Failed to initialize settings\n${err.message}`, "alert");
+      updateNetworkStatus(`状态 / Status: 初始化配置失败 / Failed to initialize settings\n${err.message}`, "alert");
+      updateCurrentTargetText();
+    });
+  </script>
+</body>
+</html>
