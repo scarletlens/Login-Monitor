@@ -16,10 +16,10 @@
 It is designed for long-running use on an operations desktop or monitoring terminal.  
 它适合长期运行在值守电脑、运维终端或监控工作站上。
 
-## Preview
+## Preview / 预览
 
-![预览图1](./images/demo1.png)
-![预览图2](./images/demo2.png)
+![预览图1](./images/demo1.jpg)
+![预览图2](./images/demo2.jpg)
 
 ## Overview / 项目介绍
 
