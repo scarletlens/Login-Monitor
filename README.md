@@ -103,9 +103,7 @@ Please make sure the following are installed:
 请先确保本机已安装以下环境：
 
 - [Node.js](https://nodejs.org/) 18 or later  
-  [Node.js](https://nodejs.org/) 18 或更高版本
 - `npm`  
-  `npm`
 
 Check your local versions with:  
 可以先用以下命令检查本机版本：
