@@ -5,7 +5,7 @@
 <h1 align="center">Login Monitor</h1>
 
 <p align="center">
- `Login Monitor` 是一个用于监测业务系统登录状态的本地大屏应用。
+ `Login Monitor` 是一个用于监测业务系统登录状态的本地大屏应用。 （=。=）
 </p>
 
 ## Preview / 预览
